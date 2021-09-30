@@ -2,6 +2,8 @@ const db = require("../models");
 const User = db.user;
 const Role = db.role;
 
+const bcrypt = require("bcryptjs");
+
 exports.allAccess = (req, res) => {
   res.status(200).send("Public Content.");
 };
@@ -13,10 +15,7 @@ exports.changeImage = async (req, res) => {
   const newvalues = {$set: {avata: req.body.profileImg} };
   const options = { new: true };
   const result = await User.findOneAndUpdate(myquery, newvalues, options);
-  // let user = await User.findById(userId).exec();
-  // user.avata = req.body.profileImg
-  // user.save();
-  // console.log(userid);
+  
   res.status(200).send({
     id: result._id,
     avata: result.avata,
@@ -63,5 +62,34 @@ exports.moderatorBoard = (req, res) => {
 
 exports.getAllusers = async (req, res) => {
   const allUsers = await User.find().exec();
-  res.status(200).send({allUsers: allUsers});
+  const allRoles = await Role.find().exec();
+
+  const users = allUsers.map((user) => {
+    let temp = user;
+    let roles = user.roles;
+    for( let i = 0; i < roles.length; i++ ) {
+        allRoles.forEach(role => {
+            if( role._id.toString() == roles[i].toString() ) {
+                roles[i] = role.name;
+            }   
+        });
+    }
+
+    temp.roles = roles;
+    return temp;
+  });
+  res.status(200).send({allUsers: users});
+}
+
+exports.resetPassword = async (req, res) => {
+    const user  = req.body.user;
+    const userQuery = { _id: user.id }
+    const newValues = { $set: { password: bcrypt.hashSync(user.password, 8) } }
+
+    const result = await User.findOneAndUpdate(userQuery, newValues);
+    console.log(result)
+
+    res.status(200).send({
+        success: true
+    })
 }
