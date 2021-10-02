@@ -1,3 +1,18 @@
+const paginateArray = (array, perPage, page) => array.slice((page - 1) * perPage, page * perPage)
+
+const sortCompare = key => (a, b) => {
+    const fieldA = a[key]
+    const fieldB = b[key]
+
+    let comparison = 0
+    if (fieldA > fieldB) {
+        comparison = 1
+    } else if (fieldA < fieldB) {
+        comparison = -1
+    }
+    return comparison
+}
+
 const db = require("../models");
 const User = db.user;
 const Role = db.role;
@@ -61,24 +76,45 @@ exports.moderatorBoard = (req, res) => {
 };
 
 exports.getAllusers = async (req, res) => {
-  const allUsers = await User.find().exec();
-  const allRoles = await Role.find().exec();
+    const allUsers = await User.find().exec();
+    const allRoles = await Role.find().exec();
 
-  const users = allUsers.map((user) => {
-    let temp = user;
-    let roles = user.roles;
-    for( let i = 0; i < roles.length; i++ ) {
-        allRoles.forEach(role => {
-            if( role._id.toString() == roles[i].toString() ) {
-                roles[i] = role.name;
-            }   
-        });
+    // query Params
+    const {
+        q = '',
+        perPage = 10,
+        page = 1,
+        sortBy = 'id',
+        sortDesc = false,
+    } = req.query;
+
+    const queryLowered = q.toLowerCase()
+
+    const filteredData = allUsers.filter( user => 
+        (user.username.toLowerCase().includes(queryLowered))
+    )
+
+    let sortedData = filteredData.sort(sortCompare(sortBy))
+
+    if (sortDesc === 'true') {
+        sortedData.reverse()
     }
 
-    temp.roles = roles;
-    return temp;
-  });
-  res.status(200).send({allUsers: users});
+    const users = paginateArray(sortedData, perPage, page).map((user) => {
+        let temp = user;
+        let roles = user.roles;
+        for( let i = 0; i < roles.length; i++ ) {
+            allRoles.forEach(role => {
+                if( role._id.toString() == roles[i].toString() ) {
+                    roles[i] = role.name;
+                }   
+            });
+        }
+
+        temp.roles = roles;
+        return temp;
+    });
+    res.status(200).send({allUsers: users, total: filteredData.length});
 }
 
 exports.resetPassword = async (req, res) => {
