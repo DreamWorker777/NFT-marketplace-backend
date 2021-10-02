@@ -26,4 +26,6 @@ module.exports = function(app) {
   app.post("/api/auth/requestPasswordReset", controller.requestPasswordReset);
 
   app.post("/api/auth/resetPassword", controller.resetPassword);
+
+  app.post("/api/auth/twofactorVerify", controller.twofactorVerify);
 };

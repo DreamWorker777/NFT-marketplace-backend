@@ -10,6 +10,7 @@ const crypto = require("crypto");
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
 const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 
 const bcryptSalt = process.env.BCRYPT_SALT;
 const clientURL = process.env.CLIENT_URL;
@@ -171,37 +172,95 @@ exports.signin_admin = (req, res) => {
             message: "Invalid Password!"
           });
         }
-  
-        const secret = speakeasy.generateSecret({length: 10});
-        console.log('secret: ', secret);
 
-        // -------- send user action ----------
-        var token = jwt.sign({ id: user.id }, config.secret, {
-          expiresIn: 86400 // 24 hours
-        });
-  
-        var tokendate = new Date();
-  
-        var authorities = [];
-  
-        for (let i = 0; i < user.roles.length; i++) {
-          authorities.push("ROLE_" + user.roles[i].name.toUpperCase());
+        if( user.roles.findIndex(item => item.name.toUpperCase() === 'ADMIN') == -1 ) {
+            return res.send({
+                success: false,
+                accessToken: null,
+                message: "No Admin Access Control!"
+              });
         }
-        res.status(200).send({
-          success: true,
-          id: user._id,
-          avata: user.avata,
-          firstname: user.first,
-          lastname: user.last,
-          username: user.username,
-          email: user.email,
-          wallet: user.walletId,
-          roles: authorities,
-          accessToken: token,
-          genTokenDate: tokendate
+  
+        // opt
+        const secret = speakeasy.generateSecret({length: 20});
+
+        var temp = speakeasy.totp({
+            secret: secret.base32,
+            encoding: 'base32'
+        });
+        console.log('token: ', temp);
+
+        let twofactor = {};
+        QRCode.toDataURL(secret.otpauth_url, async (err, data_url)=>{
+            //save to logged in user.
+            twofactor = {
+                tempSecret: secret.base32,
+                dataURL: data_url,
+                otpURL: secret.otpauth_url
+            }
+
+            await User.updateOne(
+                { _id: user._id },
+                { $set: 
+                    { "twofactor.tempSecret": twofactor.tempSecret, "twofactor.dataURL": twofactor.dataURL, "twofactor.otpURL": twofactor.otpURL } 
+                }
+            );
+
+            res.status(200).send({
+                success: true,
+                id: user._id,
+                twofactor: twofactor
+            });
         });
       });
 };
+
+exports.twofactorVerify = async ( req, res ) => {
+    const otp = req.body.token;
+    const userId = req.body.id;
+
+    const user = await User.findOne({ _id: userId }).populate("roles", "-__v");
+    if( !user ) {
+        return res.send({ success: false, message: "Email does not exist" });
+    }
+
+    const verified = speakeasy.totp.verify({
+        secret: user.twofactor.tempSecret, //secret of the logged in user
+        encoding: 'base32',
+        token: otp
+    });
+
+    if(!verified){
+        return res.send({ success: false, message: "Invalid token, verification failed" });
+    }
+
+    // -------- send user action ----------
+    var token = jwt.sign({ id: user.id }, config.secret, {
+      expiresIn: 86400 // 24 hours
+    });
+
+    var tokendate = new Date();
+
+    var authorities = [];
+
+    for (let i = 0; i < user.roles.length; i++) {
+      authorities.push("ROLE_" + user.roles[i].name.toUpperCase());
+    }
+    res.status(200).send({
+        success: true,
+        id: user._id,
+        avata: user.avata,
+        firstname: user.first,
+        lastname: user.last,
+        username: user.username,
+        email: user.email,
+        wallet: user.walletId,
+        roles: authorities,
+        accessToken: token,
+        genTokenDate: tokendate,
+        twofactor: user.twofactor,
+    });
+}
 
 exports.requestPasswordReset = async (req, res) => {
     console.log('env: ', process.env);
