@@ -7,7 +7,8 @@ db.mongoose = mongoose;
 
 db.user = require("./user.model");
 db.role = require("./role.model");
-db.nftlink = require("./nftlink.model")
+db.nftlink = require("./nftlink.model");
+db.resetToken = require("./resetToken.model");
 
 db.ROLES = ["user", "admin", "moderator"];
 

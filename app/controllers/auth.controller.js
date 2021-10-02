@@ -2,11 +2,19 @@ const config = require("../config/auth.config");
 const db = require("../models");
 const User = db.user;
 const Role = db.role;
+const ResetToken = db.resetToken;
+
+const sendEmail = require("../utils/email/sendEmail");
+const crypto = require("crypto");
 
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcryptjs");
+const speakeasy = require('speakeasy');
 
-exports.signup = (req, res) => {
+const bcryptSalt = process.env.BCRYPT_SALT;
+const clientURL = process.env.CLIENT_URL;
+
+exports.signup = async (req, res) => {
   const user = new User({
     avata: req.body.avata,
     first: req.body.first,
@@ -17,6 +25,20 @@ exports.signup = (req, res) => {
     createdAt: new Date(),
     walletId: req.body.wallet
   });
+
+  // check email
+  let old = await User.findOne({ email: req.body.email });
+  if( old ) {
+    res.send({ success: false, message: "Email already exist" });
+    return;
+  }
+
+  // check username
+  old = await User.findOne({ username: req.body.username });
+  if( old ) {
+      res.send({ success: false, message: "Username already exist" });
+      return;
+  }
 
   user.save((err, user) => {
     if (err) {
@@ -121,3 +143,130 @@ exports.signin = (req, res) => {
       });
     });
 };
+
+exports.signin_admin = (req, res) => {
+    User.findOne({
+      username: req.body.username
+    })
+      .populate("roles", "-__v")
+      .exec((err, user) => {
+        if (err) {
+          res.status(500).send({ message: err });
+          return;
+        }
+  
+        if (!user) {
+          return res.send({ success: false, message: "User Not found." });
+        }
+  
+        var passwordIsValid = bcrypt.compareSync(
+          req.body.password,
+          user.password
+        );
+  
+        if (!passwordIsValid) {
+          return res.send({
+            success: false,
+            accessToken: null,
+            message: "Invalid Password!"
+          });
+        }
+  
+        const secret = speakeasy.generateSecret({length: 10});
+        console.log('secret: ', secret);
+
+        // -------- send user action ----------
+        var token = jwt.sign({ id: user.id }, config.secret, {
+          expiresIn: 86400 // 24 hours
+        });
+  
+        var tokendate = new Date();
+  
+        var authorities = [];
+  
+        for (let i = 0; i < user.roles.length; i++) {
+          authorities.push("ROLE_" + user.roles[i].name.toUpperCase());
+        }
+        res.status(200).send({
+          success: true,
+          id: user._id,
+          avata: user.avata,
+          firstname: user.first,
+          lastname: user.last,
+          username: user.username,
+          email: user.email,
+          wallet: user.walletId,
+          roles: authorities,
+          accessToken: token,
+          genTokenDate: tokendate
+        });
+      });
+};
+
+exports.requestPasswordReset = async (req, res) => {
+    console.log('env: ', process.env);
+
+    const user = await User.findOne({ email: req.body.email });
+    if( !user ) {
+        res.send({ success: false, message: "Email does not exist" });
+        return;
+    }
+
+    const token = await ResetToken.findOne({ userId: user._id });
+    if( token ) await token.deleteOne();
+
+    const resToken = crypto.randomBytes(32).toString("hex");
+    const hash = await bcrypt.hash(resToken, Number(bcryptSalt));
+
+    await new ResetToken({
+        userId: user._id,
+        token: hash,
+        createdAt: Date.now()
+    }).save();
+
+    const link = `${clientURL}/passwordReset?token=${resToken}&id=${user._id}`;
+
+    console.log('link: ', link);
+
+    sendEmail(
+        user.email,
+        "Truhelix.com",
+        {
+          name: user.username,
+          link: link,
+        },
+        "./template/requestResetPassword.handlebars"
+    );
+    
+    res.send({ success: true });
+};
+
+exports.resetPassword = async( req, res ) => {
+    const userId = req.body.userId;
+    const token = req.body.token;
+    const password = req.body.password;
+
+    const passwordResetToken = await ResetToken.findOne({ userId });
+
+    if( !passwordResetToken ) {
+        res.send({ success: false, message: "Invalid or expired password reset token" });
+        return;
+    }
+
+    const isValid = await bcrypt.compare(token, passwordResetToken.token);
+
+    if( !isValid ) {
+        res.send({ success: false, message: "Invalid or expired password reset token" });
+        return;
+    }
+
+    const hash = bcrypt.hashSync(password, 8);
+
+    await User.updateOne(
+        { _id: userId },
+        { $set: { password: hash } },
+        { new: true }
+    );
+
+    res.send({ success: true });
+}
