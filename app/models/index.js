@@ -9,6 +9,8 @@ db.user = require("./user.model");
 db.role = require("./role.model");
 db.nftlink = require("./nftlink.model");
 db.resetToken = require("./resetToken.model");
+db.siteInfo = require("./siteInfo.model");
+db.badWordList = require('./badWordList.model');
 
 db.ROLES = ["user", "admin", "moderator"];
 

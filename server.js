@@ -25,6 +25,7 @@ app.use(express.json({ limit: '2048mb' }));
 app.use(bodyParser.urlencoded({ limit: '2048mb' }));
 const db = require("./app/models");
 const Role = db.role;
+const SiteInfo = db.siteInfo;
 
 db.mongoose
   .connect(`mongodb://${dbConfig.HOST}:${dbConfig.PORT}/${dbConfig.DB}`, {
@@ -78,37 +79,50 @@ for (const name of Object.keys(nets)) {
 console.log(results);
 
 function initial() {
-  Role.estimatedDocumentCount((err, count) => {
-    if (!err && count === 0) {
-      new Role({
-        name: "user"
-      }).save(err => {
-        if (err) {
-          console.log("error", err);
+    Role.estimatedDocumentCount((err, count) => {
+        if (!err && count === 0) {
+        new Role({
+            name: "user"
+        }).save(err => {
+            if (err) {
+            console.log("error", err);
+            }
+
+            console.log("added 'user' to roles collection");
+        });
+
+        new Role({
+            name: "moderator"
+        }).save(err => {
+            if (err) {
+            console.log("error", err);
+            }
+
+            console.log("added 'moderator' to roles collection");
+        });
+
+        new Role({
+            name: "admin"
+        }).save(err => {
+            if (err) {
+            console.log("error", err);
+            }
+
+            console.log("added 'admin' to roles collection");
+        });
         }
-
-        console.log("added 'user' to roles collection");
-      });
-
-      new Role({
-        name: "moderator"
-      }).save(err => {
-        if (err) {
-          console.log("error", err);
-        }
-
-        console.log("added 'moderator' to roles collection");
-      });
-
-      new Role({
-        name: "admin"
-      }).save(err => {
-        if (err) {
-          console.log("error", err);
-        }
-
-        console.log("added 'admin' to roles collection");
-      });
-    }
   });
+
+    SiteInfo.estimatedDocumentCount((err, count) => {
+        if( !err && count === 0 ) {
+            new SiteInfo({
+                feePercent: 10
+            }).save(err => {
+                if( err )
+                    console.log("siteinfo initial error", err);
+                
+                console.log("initialized siteInfo collection");
+            });
+        }
+    });
 }

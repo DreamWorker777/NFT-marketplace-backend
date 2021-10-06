@@ -16,6 +16,8 @@ const sortCompare = key => (a, b) => {
 const db = require("../models");
 const User = db.user;
 const Role = db.role;
+const SiteInfo = db.siteInfo;
+const BadWordList = db.badWordList;
 
 const bcrypt = require("bcryptjs");
 
@@ -43,12 +45,11 @@ exports.changeImage = async (req, res) => {
 
 exports.updateProfileDetail = async (req, res) => {
   const userid = req.userId;
-  console.log(req.body);
+
   const userQuery = { _id: userid };
   const newUpdate = { $set: { username: req.body.username, firstname: req.body.firstname, lastname: req.body.lastname, email: req.body.email } };
   const options = { new: true };
   const result = await User.findOneAndUpdate(userQuery, newUpdate, options);
-  console.log(result)
 
   res.status(200).send({
     id: result._id,
@@ -63,7 +64,6 @@ exports.updateProfileDetail = async (req, res) => {
 exports.userBoard = async (req, res) => {
   const userId = req.userId;
   let user = await User.findById(userId).exec();
-  console.log(user);
   res.status(200).send({user: user});
 };
 
@@ -107,7 +107,7 @@ exports.getAllusers = async (req, res) => {
             allRoles.forEach(role => {
                 if( role._id.toString() == roles[i].toString() ) {
                     roles[i] = role.name;
-                }   
+                }
             });
         }
 
@@ -123,9 +123,62 @@ exports.resetPassword = async (req, res) => {
     const newValues = { $set: { password: bcrypt.hashSync(user.password, 8) } }
 
     const result = await User.findOneAndUpdate(userQuery, newValues);
-    console.log(result)
 
     res.status(200).send({
         success: true
+    })
+}
+
+exports.getFeePercent = async(req, res) => {
+    const site_info = await SiteInfo.find().exec();
+    res.status(200).send({
+        percent: site_info[0].feePercent
+    })
+}
+
+exports.setFeePercent = async ( req, res ) => {
+    const site_info = await SiteInfo.find().exec();
+    const feePercent = req.body.feePercent;
+
+    const myQuery = { _id: site_info[0]._id };
+    const newValues = { feePercent: feePercent };
+
+    await SiteInfo.updateOne(myQuery, newValues);
+
+    return res.status(200).send({
+        success: true
+    })
+}
+
+exports.addNewBadWord = async ( req, res ) => {
+    const word = req.body.word;
+
+    const old = await BadWordList.findOne({ content: word });
+    if( old ) {
+        return res.status(200).send({
+            success: false,
+            message: 'Word already exists!'
+        })
+    }
+
+    await new BadWordList({
+        content: word,
+        user_id: req.userId
+    }).save();
+
+    const allWords = await BadWordList.find().populate('user_id', "-__v").exec();
+
+    return res.status(200).send({
+        success: true,
+        all: allWords,
+    })
+}
+
+exports.getBadWordList = async ( req, res ) => {
+    const allWords = await BadWordList.find().populate('user_id', "-__v").exec();
+
+    return res.status(200).send({
+        success: true,
+        all: allWords,
     })
 }

@@ -263,7 +263,6 @@ exports.twofactorVerify = async ( req, res ) => {
 }
 
 exports.requestPasswordReset = async (req, res) => {
-    console.log('env: ', process.env);
 
     const user = await User.findOne({ email: req.body.email });
     if( !user ) {
@@ -284,8 +283,6 @@ exports.requestPasswordReset = async (req, res) => {
     }).save();
 
     const link = `${clientURL}/passwordReset?token=${resToken}&id=${user._id}`;
-
-    console.log('link: ', link);
 
     sendEmail(
         user.email,

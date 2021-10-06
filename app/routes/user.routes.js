@@ -13,34 +13,30 @@ module.exports = function(app) {
 
   //user routes
   app.get("/api/test/all", controller.allAccess);
-
   app.post("/api/user/profileImage", [authJwt.verifyToken], controller.changeImage);
-
-  app.get("/api/user/all", [authJwt.verifyToken], controller.getAllusers);
-
   app.post("/api/user/profileUpdate", [authJwt.verifyToken], controller.updateProfileDetail);
 
-  app.get("/api/test/user", [authJwt.verifyToken], controller.userBoard);
-
-  app.post('/api/user/resetPassword', [authJwt.verifyToken], controller.resetPassword);
-
-  app.get(
-    "/api/test/mod",
-    [authJwt.verifyToken, authJwt.isModerator],
-    controller.moderatorBoard
-  );
-
-  app.get(
-    "/api/test/admin",
-    [authJwt.verifyToken, authJwt.isAdmin],
-    controller.adminBoard
-  );
-
-  //nftdata routes
+  // nftdata routes
   app.post("/api/nftdata/create", [authJwt.verifyToken], nftController.nftupload);
   app.get("/api/nftdata/getall",  [authJwt.verifyToken], nftController.getAllNfts);
   app.get("/api/nftdata/get/:nftid",  [authJwt.verifyToken], nftController.getbyNFT);
   app.get("/api/nftdata/getbyUser",  [authJwt.verifyToken], nftController.getbyUser);
   app.get("/api/nftdata/savefile", nftController.uploadAsset);
   app.get("/api/nftdata/genhash", nftController.genhash);
+
+
+  // ***********  Admin Routes ****************
+
+  app.get("/api/user/all", [authJwt.verifyToken, authJwt.isAdmin], controller.getAllusers);
+
+  app.post('/api/user/resetPassword', [authJwt.verifyToken, authJwt.isAdmin], controller.resetPassword);
+
+  // Fee Percent
+  app.post("/api/app/getFeePercent", [authJwt.verifyToken, authJwt.isAdmin], controller.getFeePercent);
+  app.post("/api/app/setFeePercent", [authJwt.verifyToken, authJwt.isAdmin], controller.setFeePercent);
+
+  // screening content
+  app.post("/api/app/getBadWordList", [authJwt.verifyToken], controller.getBadWordList);
+  app.post("/api/app/addNewBadWord", [authJwt.verifyToken, authJwt.isAdmin], controller.addNewBadWord);
+  
 };
