@@ -11,6 +11,7 @@ db.nftlink = require("./nftlink.model");
 db.resetToken = require("./resetToken.model");
 db.siteInfo = require("./siteInfo.model");
 db.badWordList = require('./badWordList.model');
+db.chatHistory = require('./chatHistory.model');
 
 db.ROLES = ["user", "admin", "moderator"];
 

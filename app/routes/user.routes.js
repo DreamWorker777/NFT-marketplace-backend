@@ -1,6 +1,7 @@
 const { authJwt } = require("../middlewares");
 const controller = require("../controllers/user.controller");
 const nftController = require("../controllers/nftlink.controller");
+const chatcontroller = require("../controllers/chat.controller");
 
 module.exports = function(app) {
   app.use(function(req, res, next) {
@@ -23,8 +24,14 @@ module.exports = function(app) {
   app.get("/api/nftdata/getbyUser",  [authJwt.verifyToken], nftController.getbyUser);
   app.get("/api/nftdata/savefile", nftController.uploadAsset);
   app.get("/api/nftdata/genhash", nftController.genhash);
+  
+  // user ticketing
+  app.post("/api/app/sendTicket", [authJwt.verifyToken], chatcontroller.sendTicket);
 
+  app.get("/api/user/getContacts", [authJwt.verifyToken], chatcontroller.getUserContacts);
+  app.get("/api/user/getUserChat/:userId", [authJwt.verifyToken], chatcontroller.getUserChat);
 
+  app.post("/api/user/chat/sendUserMessage", [authJwt.verifyToken], chatcontroller.sendUserMessage);
   // ***********  Admin Routes ****************
 
   app.get("/api/user/all", [authJwt.verifyToken, authJwt.isAdmin], controller.getAllusers);
@@ -38,5 +45,9 @@ module.exports = function(app) {
   // screening content
   app.post("/api/app/getBadWordList", [authJwt.verifyToken], controller.getBadWordList);
   app.post("/api/app/addNewBadWord", [authJwt.verifyToken, authJwt.isAdmin], controller.addNewBadWord);
-  
+
+  app.get("/api/chat/contacts", [authJwt.verifyToken, authJwt.isAdmin], chatcontroller.getContacts);
+  app.get("/api/chat/getChat/:ticketId", [authJwt.verifyToken, authJwt.isAdmin], chatcontroller.getChat);
+
+  app.post("/api/chat/sendMessage", [authJwt.verifyToken, authJwt.isAdmin], chatcontroller.sendMessage);
 };
