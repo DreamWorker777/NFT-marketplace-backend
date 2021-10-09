@@ -18,8 +18,10 @@ const User = db.user;
 const Role = db.role;
 const SiteInfo = db.siteInfo;
 const BadWordList = db.badWordList;
+const TransactionHistory = db.transactionHistory;
 
 const bcrypt = require("bcryptjs");
+const { transactionHistory } = require("../models")
 
 exports.allAccess = (req, res) => {
   res.status(200).send("Public Content.");
@@ -181,4 +183,23 @@ exports.getBadWordList = async ( req, res ) => {
         success: true,
         all: allWords,
     })
+}
+
+exports.saveTransactionHistory = async ( req, res ) => {
+    await new TransactionHistory({
+        transactionHash: req.body.transactionHash,
+        from: req.body.from,
+        to: req.body.to,
+        amount: req.body.amount,
+        type: req.body.type,
+        IPFS: req.body.IPFS,
+    }).save();
+
+    return res.status(200).send({});
+}
+
+exports.getAllTransactionHistory = async (req, res) => {
+    const transactions = await TransactionHistory.find().exec();
+
+    return res.status(200).send({ transactions });
 }

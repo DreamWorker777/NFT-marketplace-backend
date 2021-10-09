@@ -28,10 +28,12 @@ module.exports = function(app) {
   // user ticketing
   app.post("/api/app/sendTicket", [authJwt.verifyToken], chatcontroller.sendTicket);
 
-  app.get("/api/user/getContacts", [authJwt.verifyToken], chatcontroller.getUserContacts);
+  app.post("/api/user/getContacts", [authJwt.verifyToken], chatcontroller.getUserContacts);
   app.get("/api/user/getUserChat/:userId", [authJwt.verifyToken], chatcontroller.getUserChat);
 
   app.post("/api/user/chat/sendUserMessage", [authJwt.verifyToken], chatcontroller.sendUserMessage);
+
+  app.post("/api/app/saveTransactionHistory", [authJwt.verifyToken], controller.saveTransactionHistory);
   // ***********  Admin Routes ****************
 
   app.get("/api/user/all", [authJwt.verifyToken, authJwt.isAdmin], controller.getAllusers);
@@ -50,4 +52,6 @@ module.exports = function(app) {
   app.get("/api/chat/getChat/:ticketId", [authJwt.verifyToken, authJwt.isAdmin], chatcontroller.getChat);
 
   app.post("/api/chat/sendMessage", [authJwt.verifyToken, authJwt.isAdmin], chatcontroller.sendMessage);
+
+  app.get("/api/app/getTransactions", [authJwt.verifyToken, authJwt.isAdmin], controller.getAllTransactionHistory);
 };

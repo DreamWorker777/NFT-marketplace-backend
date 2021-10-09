@@ -78,6 +78,7 @@ exports.getChat = async( req, res ) => {
     const ticket = await ChatHistory.findById( ticketId );
     if( !ticket.receiver ) {
         ticket.receiver = userId;
+        ticket.read = 1;
         ticket.save();
     }
     
@@ -166,7 +167,7 @@ exports.getUserContacts = async (req, res) => {
         contact.lastMsg = messages[ messages.length - 1 ];
 
         contacts.push(contact);
-
+        
         if( contacts.length === chats.length ) {
             return res.status(200).send({
                 contacts

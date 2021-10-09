@@ -12,6 +12,7 @@ db.resetToken = require("./resetToken.model");
 db.siteInfo = require("./siteInfo.model");
 db.badWordList = require('./badWordList.model');
 db.chatHistory = require('./chatHistory.model');
+db.transactionHistory = require('./transactionHistory.model');
 
 db.ROLES = ["user", "admin", "moderator"];
 
