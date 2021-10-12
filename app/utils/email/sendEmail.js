@@ -12,7 +12,8 @@ const sendEmail = async (email, subject, payload, template) => {
         auth: {
             user: process.env.EMAIL_USERNAME,
             pass: process.env.EMAIL_PASSWORD
-        }
+        },
+        secure: true,
     });
 
     const source = fs.readFileSync(path.join(__dirname, template), "utf8");
