@@ -274,9 +274,9 @@ exports.twofactorVerify = async ( req, res ) => {
 
 exports.requestPasswordReset = async (req, res) => {
 
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ username: req.body.username, email: req.body.email });
     if( !user ) {
-        res.send({ success: false, message: "Email does not exist" });
+        res.send({ success: false, message: "User info incorrect!" });
         return;
     }
 
