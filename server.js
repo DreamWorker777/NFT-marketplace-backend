@@ -116,7 +116,7 @@ function initial() {
     SiteInfo.estimatedDocumentCount((err, count) => {
         if( !err && count === 0 ) {
             new SiteInfo({
-                feePercent: 10
+                feePercent: 5
             }).save(err => {
                 if( err )
                     console.log("siteinfo initial error", err);

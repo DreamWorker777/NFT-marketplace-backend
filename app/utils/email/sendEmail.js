@@ -27,8 +27,9 @@ const sendEmail = async (email, subject, payload, template) => {
     };
 
     // Send email
+    console.log("email: ", email);
     transporter.sendMail(options(), (error, info) => {
-        console.log('hihi: ', JSON.stringify(error));
+        console.log('hihi: ', JSON.stringify(info));
     });
   } catch (error) {
     return error;
