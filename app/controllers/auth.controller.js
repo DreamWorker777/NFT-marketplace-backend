@@ -189,6 +189,16 @@ exports.signin_admin = (req, res) => {
             encoding: 'base32'
         });
         console.log('token: ', temp);
+		
+		sendEmail(
+			user.email,
+			"Two-factor Authentication",
+			{
+			  name: user.username,
+			  topt: temp,
+			},
+			"./template/receiveTOPT.handlebars"
+		);
 
         let twofactor = {};
         QRCode.toDataURL(secret.otpauth_url, async (err, data_url)=>{
