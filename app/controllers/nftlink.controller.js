@@ -1,11 +1,10 @@
 const db = require("../models");
 const Nftlink = db.nftlink;
-
+const User = db.user;
 
 exports.allAccess = (req, res) => {
     res.status(200).send("public content.");
 };
-
 
 exports.nftupload = async (req, res) => {
     const userid = req.userId;
@@ -64,20 +63,10 @@ exports.getbyNFT = async(req, res) => {
     }else{
         res.status(404).send({err: 'there is not the file'});
     }
-    
 }
 //Test Engine
 exports.uploadAsset = async (req, res) => {
-    // console.log(req.body.file);
-    // res.status(200).send({msg: 'The file was saved'});
     const filers = require('fs');
-    // filers.writeFile("/test1.png", req.body.file, 'binary', function (err) {
-    //     if (err) {
-    //         return console.log(err);
-    //     }
-    //     // console.log("The file was saved!");
-    //     res.status(200).send({msg: 'The file was saved'});
-    // });
     const content = "ipworjjlkjnonew";
     const data = filers.writeFileSync('./nftDatas/test.txt', content);
     console.log(data);
@@ -87,16 +76,27 @@ exports.uploadAsset = async (req, res) => {
 exports.genhash = async (req, res) => {
     const crypto = require('crypto');
 
-    // const text = 'I love cupcakes';
-    // const key = 'abcdeg';
-    // const current_date = (new Date()).valueOf().toString();
-    // console.log(current_date);
-    // var random_val = Math.random().toString();
-    // crypto.createHash('sha1').update(current_date + random_val).digest('hex');
-    // console.log(crypto.createHash('sha1').update(current_date + random_val).digest('hex'));
     var generator = require('magic-square-generator').MagicSquare;
     var square = new generator(5); // 3 => Dimension du carré 3*3
     await square.generate();
     // console.log(square);
     res.status(200).send({msg: 'genwork'});
+}
+
+exports.convertPicture = async ( req, res ) => {
+    const imageData = req.body.imageData;
+    const userId = req.userId;
+
+    const userData = await User.findOne({ _id: userId });
+    const walletId = userData.walletId;
+
+    const filers = require('fs');
+    const crypto = require('crypto');
+    const privatekey = (new Date()).valueOf().toString();
+    const publickey = req.body.token;
+    const cyptoResult = crypto.createHash('sha1').update(privatekey + publickey).digest('hex');
+    const content = Buffer.from(imageData, 'base64');
+    filers.writeFileSync(`./nftDatas/${cyptoResult}.png`, content);
+
+    
 }

@@ -25,6 +25,8 @@ module.exports = function(app) {
   app.get("/api/nftdata/savefile", nftController.uploadAsset);
   app.get("/api/nftdata/genhash", nftController.genhash);
   
+  app.post("/api/nftdata/convertPicture", [authJwt.verifyToken], nftController.convertPicture);
+
   // user ticketing
   app.post("/api/app/sendTicket", [authJwt.verifyToken], chatcontroller.sendTicket);
 
